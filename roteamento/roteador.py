@@ -45,6 +45,16 @@ class Router:
         #    'self.neighbors'. Para cada vizinho, o 'cost' é o custo do link direto
         #    e o 'next_hop' é o endereço do próprio vizinho.
         self.routing_table = {}
+        self.routing_table[self.my_network] = {
+            "cost": 0,
+            "next_hop": self.my_network
+        }
+        
+        for neighbor_addr, cost in self.neighbors:
+            self.routing_table[neighbor_addr] = {
+                "cost": cost,
+                "next_hop": neighbor_addr
+            }
 
         print("Tabela de roteamento inicial:")
         print(json.dumps(self.routing_table, indent=4))
