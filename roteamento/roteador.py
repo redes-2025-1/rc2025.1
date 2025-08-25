@@ -145,24 +145,56 @@ def receive_update():
     print(json.dumps(sender_table, indent=4))
 
     # TODO: Implemente a lógica de Bellman-Ford aqui.
+    updated = False
     #
     # 1. Verifique se o remetente é um vizinho conhecido.
+    if sender_address not in router_instance.neighbors:  # type: ignore
+        print(f"{sender_address} is not a neighbor")
+        return jsonify({"status":"ignored", "message":"Sender not a neighbor"}), 200
+    
     # 2. Obtenha o custo do link direto para este vizinho a partir de `router_instance.neighbors`.
+    custo_direto = router_instance.neighbors[sender_address] # type: ignore
+    
     # 3. Itere sobre cada rota (`network`, `info`) na `sender_table` recebida.
+    for network, info in sender_table.items():
     # 4. Calcule o novo custo para chegar à `network`:
     #    novo_custo = custo_do_link_direto + info['cost']
+        novo_custo = custo_direto + info["cost"]
     # 5. Verifique sua própria tabela de roteamento:
     #    a. Se você não conhece a `network`, adicione-a à sua tabela com o
     #       `novo_custo` e o `next_hop` sendo o `sender_address`.
+        if router_instance is not None and network not in router_instance.routing_table:
+            router_instance.routing_table[network] = {
+                "cost": novo_custo,
+                "next_hop": sender_address
+            }
+            updated = True
     #    b. Se você já conhece a `network`, verifique se o `novo_custo` é menor
     #       que o custo que você já tem. Se for, atualize sua tabela com o
     #       novo custo e o novo `next_hop`.
+        else:
+            rota_atual = router_instance.routing_table[network] # type: ignore
+            custo_atual = rota_atual["cost"]
+            next_hop_atual = rota_atual["next_hop"]
+            
+            if novo_custo < custo_atual:
+                router_instance.routing_table[network] = { # type: ignore
+                    "cost": novo_custo,
+                    "next_hop": sender_address
+                }
+                updated = True
     #    c. (Opcional, mas importante para robustez): Se o `next_hop` para uma rota
     #       for o `sender_address`, você deve sempre atualizar o custo, mesmo que
     #       seja maior (isso ajuda a propagar notícias de links quebrados).
+            elif next_hop_atual == sender_address and custo_atual != novo_custo:
+                router_instance.routing_table[network]["cost"] = novo_custo # type: ignore
+                updated = True
     #
     # 6. Mantenha um registro se sua tabela mudou ou não. Se mudou, talvez seja
     #    uma boa ideia imprimir a nova tabela no console.
+    if updated:
+        print("\nRouting Table Updated:")
+        print(json.dumps(router_instance.routing_table, indent=4)) # type: ignore
 
     return jsonify({"status": "success", "message": "Update received"}), 200
 
