@@ -9,6 +9,44 @@ from argparse import ArgumentParser
 import requests
 from flask import Flask, jsonify, request
 
+def ip_to_int(ip):
+    """Converte um IP string em inteiro de 32 bits."""
+    parts = list(map(int, ip.split(".")))
+    return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
+
+def int_to_ip(num):
+    """Converte inteiro de 32 bits em IP string."""
+    return ".".join(str((num >> (8 * i)) & 0xFF) for i in reversed(range(4)))
+
+def can_summarize(network1, network2): # type: ignore
+    """
+    Verifica se duas redes podem ser sumarizadas.
+    Ambas devem ter o mesmo prefixo /N e o mesmo next_hop.
+    """
+    ip1, prefix1 = network1.split("/") # type: ignore
+    ip2, prefix2 = network2.split("/")
+    prefix1, prefix2 = int(prefix1), int(prefix2)
+
+    if prefix1 != prefix2:
+        return None  # só redes com mesmo prefixo podem ser sumarizadas
+
+    ip1_int = ip_to_int(ip1)
+    ip2_int = ip_to_int(ip2)
+
+    # O novo prefixo será /N-1
+    new_prefix = prefix1 - 1
+    if new_prefix < 0:
+        return None
+
+    # Calcula os "super-blocos"
+    mask = ~((1 << (32 - new_prefix)) - 1) & 0xFFFFFFFF
+    supernet1 = ip1_int & mask
+    supernet2 = ip2_int & mask
+
+    if supernet1 == supernet2:
+        return f"{int_to_ip(supernet1)}/{new_prefix}"
+    return None
+
 class Router:
     """
     Representa um roteador que executa o algoritmo de Vetor de Distância.
@@ -77,45 +115,6 @@ class Router:
                 self.send_updates_to_neighbors()
             except Exception as e:
                 print(f"Erro durante a atualização periódida: {e}")
-
-    def ip_to_int(ip):
-        """Converte um IP string em inteiro de 32 bits."""
-        parts = list(map(int, ip.split(".")))
-        return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
-
-    def int_to_ip(num):
-        """Converte inteiro de 32 bits em IP string."""
-        return ".".join(str((num >> (8 * i)) & 0xFF) for i in reversed(range(4)))
-
-    def can_summarize(network1, network2): # type: ignore
-        """
-        Verifica se duas redes podem ser sumarizadas.
-        Ambas devem ter o mesmo prefixo /N e o mesmo next_hop.
-        """
-        ip1, prefix1 = network1.split("/") # type: ignore
-        ip2, prefix2 = network2.split("/")
-        prefix1, prefix2 = int(prefix1), int(prefix2)
-
-        if prefix1 != prefix2:
-            return None  # só redes com mesmo prefixo podem ser sumarizadas
-
-        ip1_int = ip_to_int(ip1)
-        ip2_int = ip_to_int(ip2)
-
-        # O novo prefixo será /N-1
-        new_prefix = prefix1 - 1
-        if new_prefix < 0:
-            return None
-
-        # Calcula os "super-blocos"
-        mask = ~((1 << (32 - new_prefix)) - 1) & 0xFFFFFFFF
-        supernet1 = ip1_int & mask
-        supernet2 = ip2_int & mask
-
-        if supernet1 == supernet2:
-            return f"{int_to_ip(supernet1)}/{new_prefix}"
-        return None
-
 
     def send_updates_to_neighbors(self):
         """
