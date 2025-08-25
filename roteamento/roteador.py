@@ -78,6 +78,45 @@ class Router:
             except Exception as e:
                 print(f"Erro durante a atualização periódida: {e}")
 
+    def ip_to_int(ip):
+        """Converte um IP string em inteiro de 32 bits."""
+        parts = list(map(int, ip.split(".")))
+        return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
+
+    def int_to_ip(num):
+        """Converte inteiro de 32 bits em IP string."""
+        return ".".join(str((num >> (8 * i)) & 0xFF) for i in reversed(range(4)))
+
+    def can_summarize(network1, network2): # type: ignore
+        """
+        Verifica se duas redes podem ser sumarizadas.
+        Ambas devem ter o mesmo prefixo /N e o mesmo next_hop.
+        """
+        ip1, prefix1 = network1.split("/") # type: ignore
+        ip2, prefix2 = network2.split("/")
+        prefix1, prefix2 = int(prefix1), int(prefix2)
+
+        if prefix1 != prefix2:
+            return None  # só redes com mesmo prefixo podem ser sumarizadas
+
+        ip1_int = ip_to_int(ip1)
+        ip2_int = ip_to_int(ip2)
+
+        # O novo prefixo será /N-1
+        new_prefix = prefix1 - 1
+        if new_prefix < 0:
+            return None
+
+        # Calcula os "super-blocos"
+        mask = ~((1 << (32 - new_prefix)) - 1) & 0xFFFFFFFF
+        supernet1 = ip1_int & mask
+        supernet2 = ip2_int & mask
+
+        if supernet1 == supernet2:
+            return f"{int_to_ip(supernet1)}/{new_prefix}"
+        return None
+
+
     def send_updates_to_neighbors(self):
         """
         Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
@@ -91,11 +130,42 @@ class Router:
         # 2. IMPLEMENTE A LÓGICA DE SUMARIZAÇÃO nesta cópia.
         # 3. ENVIE A CÓPIA SUMARIZADA no payload, em vez da tabela original.
         
-        tabela_para_enviar = self.routing_table # ATENÇÃO: Substitua pela cópia sumarizada.
+        tabela_para_enviar = dict(self.routing_table) # ATENÇÃO: Substitua pela cópia sumarizada.
+        
+        rotas_por_hop = {}
+        for net, info in tabela_para_enviar.items():
+            hop = info["next_hop"]
+            if hop not in rotas_por_hop:
+                rotas_por_hop[hop] = []
+            rotas_por_hop[hop].append((net, info["cost"]))
+
+        tabela_sumarizada = {}
+        for hop, rotas in rotas_por_hop.items():
+            rotas = sorted(rotas, key=lambda r: (int(r[0].split("/")[1]), ip_to_int(r[0].split("/")[0])))  
+            skip = set()
+            for i in range(len(rotas)):
+                if i in skip:
+                    continue
+                net1, cost1 = rotas[i]
+                summarized = False
+                for j in range(i + 1, len(rotas)):
+                    if j in skip:
+                        continue
+                    net2, cost2 = rotas[j]
+                    new_net = can_summarize(net1, net2)
+                    if new_net:
+                        # custo da rota agregada = maior custo
+                        tabela_sumarizada[new_net] = {"cost": max(cost1, cost2), "next_hop": hop}
+                        skip.add(i)
+                        skip.add(j)
+                        summarized = True
+                        break
+                if not summarized:
+                    tabela_sumarizada[net1] = {"cost": cost1, "next_hop": hop}
 
         payload = {
             "sender_address": self.my_address,
-            "routing_table": tabela_para_enviar
+            "routing_table": tabela_sumarizada
         }
 
         for neighbor_address in self.neighbors:
