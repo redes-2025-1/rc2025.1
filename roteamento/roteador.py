@@ -21,32 +21,35 @@ def int_to_ip(ip_int):
     """Converte um inteiro de 32 bits de volta para uma string de IP."""
     return f"{(ip_int >> 24) & 0xFF}.{(ip_int >> 16) & 0xFF}.{(ip_int >> 8) & 0xFF}.{ip_int & 0xFF}"
 
-def summarize(net1_str, net2_str):
+def _find_supernet_for_group(networks):
     """
     Verifica se duas redes são adjacentes e podem ser sumarizadas.
     Retorna a nova super-rede ou None se não for possível.
     """
+    if not networks or len(networks) <= 1:
+        return None
+    
     try:
-        ip1_str, prefix1_str = net1_str.split('/')
-        ip2_str, prefix2_str = net2_str.split('/')
-        prefix1, prefix2 = int(prefix1_str), int(prefix2_str)
-
-        if prefix1 != prefix2:
-            return None
-
-        new_prefix = prefix1 - 1
-        if new_prefix < 0:
-            return None
-
-        ip1_int = ip_to_int(ip1_str)
-        ip2_int = ip_to_int(ip2_str)
-
-        if (ip1_int ^ ip2_int) != (1 << (32 - prefix1)):
-            return None
-
-        supernet_address_int = min(ip1_int, ip2_int)
+        ip_ints = [ip_to_int(net.split('/')[0]) for net in networks]
+        prefix = int(networks[0].split('/')[1])
         
-        return f"{int_to_ip(supernet_address_int)}/{new_prefix}"
+        min_ip = min(ip_ints)
+        max_ip = max(ip_ints)
+        
+        if min_ip == max_ip:
+            return networks[0]
+        
+        xor_val = min_ip ^ max_ip
+        common_bits = 32 - xor_val.bit_length()
+        new_prefix = min(prefix, common_bits)
+
+        if new_prefix <= 8 and new_prefix < common_bits:
+            return None
+        
+        mask = (0xFFFFFFFF << (32 - new_prefix)) & 0xFFFFFFFF
+        supernet_int = min_ip & mask
+        
+        return f"{int_to_ip(supernet_int)}/{new_prefix}"
 
     except (ValueError, IndexError):
         return None
@@ -118,44 +121,33 @@ class Router:
         """
         Aplica a lógica de sumarização de forma iterativa para encontrar a melhor agregação.
         """
-        summarized_table = routes_to_summarize.copy()
-        can_summarize = True
-        while can_summarize:
-            can_summarize = False
-            temp_table = summarized_table.copy()
-            
-            routes_by_hop = defaultdict(list)
-            for net, data in temp_table.items():
-                if "/" in net:
-                    routes_by_hop[data['next_hop']].append(net)
+        summarized_table = {}
+        routes_by_hop = defaultdict(list)
 
-            for next_hop, networks in routes_by_hop.items():
-                if len(networks) < 2:
-                    continue
+        # 1. Agrupa todas as rotas de rede pelo seu 'next_hop'
+        for network, data in routes_to_summarize.items():
+            if "/" in network:
+                routes_by_hop[data['next_hop']].append(network)
+            else:
+                summarized_table[network] = data
+        
+        # 2. Tenta sumarizar cada grupo de redes
+        for next_hop, networks in routes_by_hop.items():
+            if len(networks) > 1:
+                supernet = _find_supernet_for_group(networks)
+                if supernet:
 
-                summarized_in_this_pass = set()
-                for i in range(len(networks)):
-                    for j in range(i + 1, len(networks)):
-                        net1, net2 = networks[i], networks[j]
+                    print(f"Rotas via {next_hop} {networks} foram sumarizadas para - {supernet}")
+                    max_cost = max(routes_to_summarize[net]['cost'] for net in networks)
+                    summarized_table[supernet] = {'cost': max_cost, 'next_hop': next_hop}
+                else:
+                    for net in networks:
+                        summarized_table[net] = routes_to_summarize[net]
+            else:
+                if networks:
+                    net = networks[0]
+                    summarized_table[net] = routes_to_summarize[net]
 
-                        if net1 in summarized_in_this_pass or net2 in summarized_in_this_pass:
-                            continue
-                        
-                        supernet = summarize(net1, net2)
-                        
-                        if supernet:
-                            can_summarize = True
-                            new_cost = max(temp_table[net1]['cost'], temp_table[net2]['cost'])
-                            
-                            summarized_table[supernet] = {'cost': new_cost, 'next_hop': next_hop}
-                            if net1 in summarized_table: del summarized_table[net1]
-                            if net2 in summarized_table: del summarized_table[net2]
-                            
-                            summarized_in_this_pass.add(net1)
-                            summarized_in_this_pass.add(net2)
-                            break 
-                    if can_summarize: break
-                if can_summarize: break
         return summarized_table
 
     def send_updates_to_neighbors(self):
