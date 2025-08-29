@@ -43,9 +43,6 @@ def _find_supernet_for_group(networks):
         common_bits = 32 - xor_val.bit_length()
         new_prefix = min(prefix, common_bits)
 
-        if new_prefix <= 8 and new_prefix < common_bits:
-            return None
-        
         mask = (0xFFFFFFFF << (32 - new_prefix)) & 0xFFFFFFFF
         supernet_int = min_ip & mask
         
@@ -233,7 +230,7 @@ def get_routes():
     if router_instance:
         with router_instance.lock:
             return jsonify({
-                "message": "Não implementado!.",
+                "message": "Status atual do roteador",
                 "vizinhos" : router_instance.neighbors,
                 "my_network": router_instance.my_network,
                 "my_address": router_instance.my_address,
