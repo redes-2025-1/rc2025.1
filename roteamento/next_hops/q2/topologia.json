@@ -1,0 +1,74 @@
+[
+    {
+        "name": "Router R1",
+        "network": "10.1.0.0/24",
+        "address": "192.168.0.1:5000",
+        "config_file": "config_R1.csv"
+    },
+    {
+        "name": "Router R2",
+        "network": "10.2.0.0/24",
+        "address": "192.168.0.2:5000",
+        "config_file": "config_R2.csv"
+    },
+    {
+        "name": "Router R3",
+        "network": "10.3.0.0/24",
+        "address": "192.168.0.3:5000",
+        "config_file": "config_R3.csv"
+    },
+    {
+        "name": "Router R4",
+        "network": "10.4.0.0/24",
+        "address": "192.168.0.4:5000",
+        "config_file": "config_R4.csv"
+    },
+    {
+        "name": "Router R5",
+        "network": "10.5.0.0/24",
+        "address": "192.168.0.5:5000",
+        "config_file": "config_R5.csv"
+    },
+    {
+        "name": "Router R6",
+        "network": "10.6.0.0/24",
+        "address": "192.168.0.6:5000",
+        "config_file": "config_R6.csv"
+    },
+    {
+        "name": "Router R7",
+        "network": "10.7.0.0/24",
+        "address": "192.168.0.7:5000",
+        "config_file": "config_R7.csv"
+    },
+    {
+        "name": "Router R8",
+        "network": "10.8.0.0/24",
+        "address": "192.168.0.8:5000",
+        "config_file": "config_R8.csv"
+    },
+    {
+        "name": "Router R9",
+        "network": "10.9.0.0/24",
+        "address": "192.168.0.9:5000",
+        "config_file": "config_R9.csv"
+    },
+    {
+        "name": "Router R10",
+        "network": "10.10.0.0/24",
+        "address": "192.168.0.10:5000",
+        "config_file": "config_R10.csv"
+    },
+    {
+        "name": "Router R11",
+        "network": "10.11.0.0/24",
+        "address": "192.168.0.11:5000",
+        "config_file": "config_R11.csv"
+    },
+    {
+        "name": "Router R12",
+        "network": "10.12.0.0/24",
+        "address": "192.168.0.12:5000",
+        "config_file": "config_R12.csv"
+    }
+]
