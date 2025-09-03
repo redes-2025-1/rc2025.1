@@ -30,8 +30,19 @@ def _find_supernet_for_group(networks):
         return None
     
     try:
-        ip_ints = [ip_to_int(net.split('/')[0]) for net in networks]
-        prefix = int(networks[0].split('/')[1])
+        network_data = []
+        for net in networks:
+            ip_str, prefix_str = net.split('/')
+            ip_int = ip_to_int(ip_str)
+            prefix = int(prefix_str)
+            network_data.append((ip_int, prefix))
+        
+        prefixes = set(data[1] for data in network_data)
+        if len(prefixes) > 1:
+            return None
+        
+        prefix = list(prefixes)[0]
+        ip_ints = [data[0] for data in network_data]
         
         min_ip = min(ip_ints)
         max_ip = max(ip_ints)
@@ -42,6 +53,9 @@ def _find_supernet_for_group(networks):
         xor_val = min_ip ^ max_ip
         common_bits = 32 - xor_val.bit_length()
         new_prefix = min(prefix, common_bits)
+
+        if new_prefix >= prefix:
+            return None
 
         mask = (0xFFFFFFFF << (32 - new_prefix)) & 0xFFFFFFFF
         supernet_int = min_ip & mask
@@ -87,10 +101,8 @@ class Router:
         #
         # 3. Adicione as rotas para seus vizinhos diretos, usando o dicionário
         #    'self.neighbors'. Para cada vizinho, o 'cost' é o custo do link direto
-        #    e o 'next_hop' é o endereço do próprio vizinho.
+        #    e o 'next_hop' é o endereço do próprio vizinho.    
         self.routing_table[self.my_network] = {"cost": 0, "next_hop": self.my_network}
-        for neighbor_addr, cost in self.neighbors.items():
-            self.routing_table[neighbor_addr] = {"cost": cost, "next_hop": neighbor_addr}
 
         print("Tabela de roteamento inicial:")
         print(json.dumps(self.routing_table, indent=4))
@@ -281,7 +293,7 @@ def receive_update():
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Simulador de Roteador com Vetor de Distância")
-    parser.add_argument('-a', '--address', type=str, required=True, help="O endereço IP público deste roteador.")
+    parser.add_argument('-a', '--address', type=str, default='127.0.0.1', help="O endereço IP público deste roteador.")
     parser.add_argument('-p', '--port', type=int, default=5000, help="Porta para executar o roteador.")
     parser.add_argument('-f', '--file', type=str, required=True, help="Arquivo CSV de configuração de vizinhos.")
     parser.add_argument('--network', type=str, required=True, help="Rede administrada por este roteador (ex: 10.0.1.0/24).")
