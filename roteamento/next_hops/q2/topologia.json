@@ -50,7 +50,7 @@
     {
         "name": "R9",
         "network": "150.165.98.0/24",
-        "address": "150.165.98.248:5000",
+        "address": "10.97.194.147:5000",
         "config_file": "config_R9.csv"
     },
     {
@@ -68,7 +68,7 @@
     {
         "name": "R12",
         "network": "150.165.98.0/24",
-        "address": "150.165.98.249:5000",
+        "address": "10.97.192.5:5000",
         "config_file": "config_R12.csv"
     }
 ]
