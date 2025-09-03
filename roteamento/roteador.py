@@ -163,39 +163,40 @@ class Router:
         """
         Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
         """
+        # Step 1: Prepare all payloads while holding lock (minimize lock time)
+        payloads_to_send = []
+        
         with self.lock:
             if not self.routing_table:
                 return
             
-            # TODO: O código abaixo envia a tabela de roteamento *diretamente*.
-            #
-            # ESTE TRECHO DEVE SER CHAMAADO APOS A SUMARIZAÇÃO.
-            #
-            # dica:
-            # 1. CRIE UMA CÓPIA da `self.routing_table` NÃO ALTERE ESTA VALOR.
-            # 2. IMPLEMENTE A LÓGICA DE SUMARIZAÇÃO nesta cópia.
-            # 3. ENVIE A CÓPIA SUMARIZADA no payload, em vez da tabela original.
-
             for neighbor_address in self.neighbors:
-                
                 table_for_neighbor = {}
                 for network, info in self.routing_table.items():
                     if info['next_hop'] != neighbor_address:
-                        table_for_neighbor[network] = info
+                        table_for_neighbor[network] = info.copy()  # Create copy to avoid reference issues
                 
-                summarized_table = self._summarize_routes(table_for_neighbor)
+                try:
+                    summarized_table = self._summarize_routes(table_for_neighbor)
+                except Exception as e:
+                    print(f"Erro na sumarização para {neighbor_address}: {e}")
+                    summarized_table = table_for_neighbor  # Fallback to unsummarized table
 
                 payload = {
                     "sender_address": self.my_address,
                     "routing_table": summarized_table
                 }
-
-                url = f'http://{neighbor_address}/receive_update'
-                try:
-                    print(f"Enviando tabela para {neighbor_address}")
-                    requests.post(url, json=payload, timeout=30)
-                except requests.exceptions.RequestException as e:
-                    print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
+                
+                payloads_to_send.append((neighbor_address, payload))
+        
+        # Step 2: Send all payloads WITHOUT holding lock (prevent deadlocks)
+        for neighbor_address, payload in payloads_to_send:
+            url = f'http://{neighbor_address}/receive_update'
+            try:
+                print(f"Enviando tabela para {neighbor_address}")
+                requests.post(url, json=payload, timeout=30)
+            except requests.exceptions.RequestException as e:
+                print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
 
     def update_routing_table(self, sender_address, sender_table):
         with self.lock:
