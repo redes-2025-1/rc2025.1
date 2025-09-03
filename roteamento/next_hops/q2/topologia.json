@@ -1,73 +1,73 @@
 [
     {
         "name": "R1",
-        "network": "10.1.0.0/24",
+        "network": "10.97.32.0/21",
         "address": "10.97.32.86:5000",
         "config_file": "config_R1.csv"
     },
     {
         "name": "R2",
-        "network": "10.2.0.0/24",
+        "network": "10.97.192.0/21",
         "address": "10.97.193.244:5000",
         "config_file": "config_R2.csv"
     },
     {
         "name": "R3",
-        "network": "10.3.0.0/24",
+        "network": "150.165.98.0/24",
         "address": "150.165.98.40:5000",
         "config_file": "config_R3.csv"
     },
     {
         "name": "R4",
-        "network": "10.4.0.0/24",
+        "network": "150.165.98.0/24",
         "address": "150.165.98.168:5000",
         "config_file": "config_R4.csv"
     },
     {
         "name": "R5",
-        "network": "10.5.0.0/24",
+        "network": "10.97.192.0/21",
         "address": "10.97.194.108:5000",
         "config_file": "config_R5.csv"
     },
     {
         "name": "R6",
-        "network": "10.6.0.0/24",
+        "network": "150.165.98.0/24",
         "address": "150.165.98.132:5000",
         "config_file": "config_R6.csv"
     },
     {
         "name": "R7",
-        "network": "10.7.0.0/24",
+        "network": "10.97.192.0/21",
         "address": "10.97.193.66:5000",
         "config_file": "config_R7.csv"
     },
     {
         "name": "R8",
-        "network": "10.8.0.0/24",
+        "network": "10.97.192.0/21",
         "address": "10.97.194.149:5000",
         "config_file": "config_R8.csv"
     },
     {
         "name": "R9",
-        "network": "10.9.0.0/24",
+        "network": "150.165.98.0/24",
         "address": "150.165.98.248:5000",
         "config_file": "config_R9.csv"
     },
     {
         "name": "R10",
-        "network": "10.10.0.0/24",
+        "network": "10.97.32.0/21",
         "address": "10.97.32.25:5000",
         "config_file": "config_R10.csv"
     },
     {
         "name": "R11",
-        "network": "10.11.0.0/24",
+        "network": "10.97.192.0/21",
         "address": "10.97.194.146:5000",
         "config_file": "config_R11.csv"
     },
     {
         "name": "R12",
-        "network": "10.12.0.0/24",
+        "network": "150.165.98.0/24",
         "address": "150.165.98.249:5000",
         "config_file": "config_R12.csv"
     }
