@@ -193,7 +193,7 @@ class Router:
                 url = f'http://{neighbor_address}/receive_update'
                 try:
                     print(f"Enviando tabela para {neighbor_address}")
-                    requests.post(url, json=payload, timeout=2)
+                    requests.post(url, json=payload, timeout=30)
                 except requests.exceptions.RequestException as e:
                     print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
 
@@ -329,5 +329,5 @@ if __name__ == '__main__':
         update_interval=args.interval
     )
 
-    # Inicia o servidor Flask
-    app.run(host='0.0.0.0', port=args.port, debug=False)
+    # Inicia o servidor Flask com threading habilitado
+    app.run(host='0.0.0.0', port=args.port, debug=False, threaded=True)
