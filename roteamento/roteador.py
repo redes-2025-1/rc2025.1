@@ -70,7 +70,7 @@ class Router:
     Representa um roteador que executa o algoritmo de Vetor de Distância.
     """
 
-    def __init__(self, my_address, neighbors, my_network, update_interval=1, simulate_problem=False):
+    def __init__(self, my_address, neighbors, my_network, update_interval=1, simulate_problem=False, no_summary = False):
         """
         Inicializa o roteador.
 
@@ -88,6 +88,10 @@ class Router:
         self.routing_table = {}
         self.lock = threading.Lock()
         self.simulate_problem = simulate_problem
+        self.no_summary = no_summary
+        if self.no_summary:
+            print("\n*** ALERTA: A Sumarização está DESATIVADA. ***\n")
+        
         if self.simulate_problem:
             print("\n*** ALERTA: Split Horizon está DESATIVADO. O modo de simulação de problemas está ativo. ***\n")
 
@@ -187,12 +191,15 @@ class Router:
                     if info['next_hop'] != neighbor_address:
                         table_for_neighbor[network] = info.copy()  # Create copy to avoid reference issues
                 
-                try:
-                    summarized_table = self._summarize_routes(table_for_neighbor)
-                except Exception as e:
-                    print(f"Erro na sumarização para {neighbor_address}: {e}")
-                    summarized_table = table_for_neighbor  # Fallback to unsummarized table
-
+                if self.no_summary:
+                    summarized_table = table_for_neighbor
+                else:
+                    try:
+                        summarized_table = self._summarize_routes(table_for_neighbor)
+                    except Exception as e:
+                        print(f"Erro na sumarização para {neighbor_address}: {e}")
+                        summarized_table = table_for_neighbor  # Fallback to unsummarized table
+                
                 payload = {
                     "sender_address": self.my_address,
                     "routing_table": summarized_table
@@ -227,7 +234,10 @@ class Router:
             
             for neighbor_address in self.neighbors:
                 # A sumarização pode ser mantida ou removida, não afeta o problema principal aqui
-                summarized_table = self._summarize_routes(table_to_send)
+                if self.no_summary:
+                    summarized_table = table_to_send
+                else:
+                    summarized_table = self._summarize_routes(table_to_send)
                 payload = {
                     "sender_address": self.my_address,
                     "routing_table": summarized_table
@@ -346,6 +356,7 @@ if __name__ == '__main__':
     parser.add_argument('--network', type=str, required=True, help="Rede administrada por este roteador (ex: 10.0.1.0/24).")
     parser.add_argument('--interval', type=int, default=10, help="Intervalo de atualização periódica em segundos.")
     parser.add_argument('-s', '--simulate-problem', action='store_true', help="Desativa o Split Horizon para simular o problema da contagem até o infinito.")
+    parser.add_argument('--no-summary', '-n', action='store_true', help="Desativa a sumarização de rotas.")
     args = parser.parse_args()
 
     # Leitura do arquivo de configuração de vizinhos
@@ -375,7 +386,8 @@ if __name__ == '__main__':
         neighbors=neighbors_config,
         my_network=args.network,
         update_interval=args.interval,
-        simulate_problem=args.simulate_problem
+        simulate_problem=args.simulate_problem,
+        no_summary=args.no_summary
     )
 
     # Inicia o servidor Flask com threading habilitado
