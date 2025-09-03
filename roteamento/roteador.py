@@ -70,7 +70,7 @@ class Router:
     Representa um roteador que executa o algoritmo de Vetor de Distância.
     """
 
-    def __init__(self, my_address, neighbors, my_network, update_interval=1):
+    def __init__(self, my_address, neighbors, my_network, update_interval=1, simulate_problem=False):
         """
         Inicializa o roteador.
 
@@ -87,6 +87,9 @@ class Router:
         self.update_interval = update_interval
         self.routing_table = {}
         self.lock = threading.Lock()
+        self.simulate_problem = simulate_problem
+        if self.simulate_problem:
+            print("\n*** ALERTA: Split Horizon está DESATIVADO. O modo de simulação de problemas está ativo. ***\n")
 
         # TODO: Este é o local para criar e inicializar sua tabela de roteamento.
         #
@@ -122,7 +125,10 @@ class Router:
             time.sleep(self.update_interval)
             print(f"[{time.ctime()}] Enviando atualizações periódicas para os vizinhos...")
             try:
-                self.send_updates_to_neighbors()
+                if self.simulate_problem:
+                    self.send_updates_to_neighbors_no_protection()
+                else:
+                    self.send_updates_to_neighbors()
             except Exception as e:
                 print(f"Erro durante a atualização periódida: {e}")
 
@@ -159,6 +165,8 @@ class Router:
 
         return summarized_table
 
+    # Código com SPLIT HORIZON, isso aqui resolve o problema da contagem infinita
+    # A proteção está no `if['next_hop'] != neighbor_address`
     def send_updates_to_neighbors(self):
         """
         Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
@@ -173,6 +181,9 @@ class Router:
             for neighbor_address in self.neighbors:
                 table_for_neighbor = {}
                 for network, info in self.routing_table.items():
+                    # Linha de implementação do SPLIT HORIZON
+                    # Split Horizon: Um roteador não deve anunciar uma rota de 
+                    # volta para o vizinho do qual ele aprendeu essa rota
                     if info['next_hop'] != neighbor_address:
                         table_for_neighbor[network] = info.copy()  # Create copy to avoid reference issues
                 
@@ -189,6 +200,41 @@ class Router:
                 
                 payloads_to_send.append((neighbor_address, payload))
         
+        # Step 2: Send all payloads WITHOUT holding lock (prevent deadlocks)
+        for neighbor_address, payload in payloads_to_send:
+            url = f'http://{neighbor_address}/receive_update'
+            try:
+                print(f"Enviando tabela para {neighbor_address}")
+                requests.post(url, json=payload, timeout=30)
+            except requests.exceptions.RequestException as e:
+                print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
+                
+    # Código sem a proteção do Split Horizon, dessa maneira podemos testar o problema da contagem adequadamente
+    def send_updates_to_neighbors_no_protection(self):
+        """
+        Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
+        *** VERSÃO MODIFICADA SEM SPLIT HORIZON PARA SIMULAR CONTAGEM INFINITA ***
+        """
+        # Step 1: Prepare all payloads while holding lock (minimize lock time)
+        payloads_to_send = []
+        
+        with self.lock:
+            if not self.routing_table:
+                return
+            
+            # Simplesmente copia a tabela de roteamento inteira para todos os vizinhos
+            table_to_send = self.routing_table.copy()
+            
+            for neighbor_address in self.neighbors:
+                # A sumarização pode ser mantida ou removida, não afeta o problema principal aqui
+                summarized_table = self._summarize_routes(table_to_send)
+                payload = {
+                    "sender_address": self.my_address,
+                    "routing_table": summarized_table
+                }
+                payloads_to_send.append((neighbor_address, payload))
+        
+
         # Step 2: Send all payloads WITHOUT holding lock (prevent deadlocks)
         for neighbor_address, payload in payloads_to_send:
             url = f'http://{neighbor_address}/receive_update'
@@ -299,6 +345,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--file', type=str, required=True, help="Arquivo CSV de configuração de vizinhos.")
     parser.add_argument('--network', type=str, required=True, help="Rede administrada por este roteador (ex: 10.0.1.0/24).")
     parser.add_argument('--interval', type=int, default=10, help="Intervalo de atualização periódica em segundos.")
+    parser.add_argument('-s', '--simulate-problem', action='store_true', help="Desativa o Split Horizon para simular o problema da contagem até o infinito.")
     args = parser.parse_args()
 
     # Leitura do arquivo de configuração de vizinhos
@@ -327,7 +374,8 @@ if __name__ == '__main__':
         my_address=my_full_address,
         neighbors=neighbors_config,
         my_network=args.network,
-        update_interval=args.interval
+        update_interval=args.interval,
+        simulate_problem=args.simulate_problem
     )
 
     # Inicia o servidor Flask com threading habilitado
