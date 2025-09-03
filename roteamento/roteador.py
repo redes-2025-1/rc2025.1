@@ -69,8 +69,9 @@ class Router:
     """
     Representa um roteador que executa o algoritmo de Vetor de Distância.
     """
-
-    def __init__(self, my_address, neighbors, my_network, update_interval=1, simulate_problem=False, no_summary = False):
+    INFINITY = 10**9
+    
+    def __init__(self, my_address, neighbors, my_network, update_interval=1, simulate_problem=False, no_summary=False):
         """
         Inicializa o roteador.
 
@@ -91,30 +92,11 @@ class Router:
         self.no_summary = no_summary
         if self.no_summary:
             print("\n*** ALERTA: A Sumarização está DESATIVADA. ***\n")
-        
         if self.simulate_problem:
             print("\n*** ALERTA: Split Horizon está DESATIVADO. O modo de simulação de problemas está ativo. ***\n")
-
-        # TODO: Este é o local para criar e inicializar sua tabela de roteamento.
-        #
-        # 1. Crie a estrutura de dados para a tabela de roteamento. Um dicionário é
-        #    uma ótima escolha, onde as chaves são as redes de destino (ex: '10.0.1.0/24')
-        #    e os valores são outro dicionário contendo 'cost' e 'next_hop'.
-        #    Ex: {'10.0.1.0/24': {'cost': 0, 'next_hop': '10.0.1.0/24'}}
-        #
-        # 2. Adicione a rota para a rede que este roteador administra diretamente
-        #    (a rede em 'self.my_network'). O custo para uma rede diretamente
-        #    conectada é 0, e o 'next_hop' pode ser a própria rede ou o endereço do roteador.
-        #
-        # 3. Adicione as rotas para seus vizinhos diretos, usando o dicionário
-        #    'self.neighbors'. Para cada vizinho, o 'cost' é o custo do link direto
-        #    e o 'next_hop' é o endereço do próprio vizinho.    
         self.routing_table[self.my_network] = {"cost": 0, "next_hop": self.my_network}
-
         print("Tabela de roteamento inicial:")
         print(json.dumps(self.routing_table, indent=4))
-
-        # Inicia o processo de atualização periódica em uma thread separada
         self._start_periodic_updates()
 
     def _start_periodic_updates(self):
@@ -172,25 +154,15 @@ class Router:
     # Código com SPLIT HORIZON, isso aqui resolve o problema da contagem infinita
     # A proteção está no `if['next_hop'] != neighbor_address`
     def send_updates_to_neighbors(self):
-        """
-        Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
-        """
-        # Step 1: Prepare all payloads while holding lock (minimize lock time)
+        # ... (a lógica de preparação do payload continua a mesma) ...
         payloads_to_send = []
-        
         with self.lock:
-            if not self.routing_table:
-                return
-            
+            if not self.routing_table: return
             for neighbor_address in self.neighbors:
                 table_for_neighbor = {}
                 for network, info in self.routing_table.items():
-                    # Linha de implementação do SPLIT HORIZON
-                    # Split Horizon: Um roteador não deve anunciar uma rota de 
-                    # volta para o vizinho do qual ele aprendeu essa rota
                     if info['next_hop'] != neighbor_address:
-                        table_for_neighbor[network] = info.copy()  # Create copy to avoid reference issues
-                
+                        table_for_neighbor[network] = info.copy()
                 if self.no_summary:
                     summarized_table = table_for_neighbor
                 else:
@@ -198,61 +170,65 @@ class Router:
                         summarized_table = self._summarize_routes(table_for_neighbor)
                     except Exception as e:
                         print(f"Erro na sumarização para {neighbor_address}: {e}")
-                        summarized_table = table_for_neighbor  # Fallback to unsummarized table
-                
-                payload = {
-                    "sender_address": self.my_address,
-                    "routing_table": summarized_table
-                }
-                
+                        summarized_table = table_for_neighbor
+                payload = {"sender_address": self.my_address, "routing_table": summarized_table}
                 payloads_to_send.append((neighbor_address, payload))
         
-        # Step 2: Send all payloads WITHOUT holding lock (prevent deadlocks)
         for neighbor_address, payload in payloads_to_send:
             url = f'http://{neighbor_address}/receive_update'
             try:
-                print(f"Enviando tabela para {neighbor_address}")
-                requests.post(url, json=payload, timeout=30)
+                # Diminuir o timeout para detectar falhas mais rápido
+                requests.post(url, json=payload, timeout=2) 
             except requests.exceptions.RequestException as e:
                 print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
-                
-    # Código sem a proteção do Split Horizon, dessa maneira podemos testar o problema da contagem adequadamente
+                # Ação correta: apenas invalide as rotas via este vizinho.
+                self._handle_neighbor_failure(neighbor_address)
+                 
+     # Código sem a proteção do Split Horizon, dessa maneira podemos testar o problema da contagem adequadamente
     def send_updates_to_neighbors_no_protection(self):
-        """
-        Envia a tabela de roteamento (potencialmente sumarizada) para todos os vizinhos.
-        *** VERSÃO MODIFICADA SEM SPLIT HORIZON PARA SIMULAR CONTAGEM INFINITA ***
-        """
-        # Step 1: Prepare all payloads while holding lock (minimize lock time)
+        # ... (a lógica de preparação do payload continua a mesma) ...
         payloads_to_send = []
-        
         with self.lock:
-            if not self.routing_table:
-                return
-            
-            # Simplesmente copia a tabela de roteamento inteira para todos os vizinhos
+            if not self.routing_table: return
             table_to_send = self.routing_table.copy()
-            
             for neighbor_address in self.neighbors:
-                # A sumarização pode ser mantida ou removida, não afeta o problema principal aqui
                 if self.no_summary:
                     summarized_table = table_to_send
                 else:
                     summarized_table = self._summarize_routes(table_to_send)
-                payload = {
-                    "sender_address": self.my_address,
-                    "routing_table": summarized_table
-                }
+                payload = {"sender_address": self.my_address, "routing_table": summarized_table}
                 payloads_to_send.append((neighbor_address, payload))
         
-
-        # Step 2: Send all payloads WITHOUT holding lock (prevent deadlocks)
         for neighbor_address, payload in payloads_to_send:
             url = f'http://{neighbor_address}/receive_update'
             try:
-                print(f"Enviando tabela para {neighbor_address}")
-                requests.post(url, json=payload, timeout=30)
+                # Diminuir o timeout para detectar falhas mais rápido
+                requests.post(url, json=payload, timeout=2)
             except requests.exceptions.RequestException as e:
                 print(f"Não foi possível conectar ao vizinho {neighbor_address}. Erro: {e}")
+                # Ação correta: apenas invalide as rotas via este vizinho.
+                self._handle_neighbor_failure(neighbor_address)
+
+    def _handle_neighbor_failure(self, failed_neighbor):
+        """
+        FOR SIMULATION: Remove todas as rotas que usam um vizinho que falhou.
+        Isso torna o roteador 'ingênuo' e pronto para ser enganado por outras rotas.
+        """
+        with self.lock:
+            updated = False
+            routes_to_remove = []
+            for network, info in self.routing_table.items():
+                if info.get('next_hop') == failed_neighbor:
+                    routes_to_remove.append(network)
+            
+            for network in routes_to_remove:
+                print(f"🚨 FALHA DETECTADA: Removendo a rota para {network} via {failed_neighbor}.")
+                del self.routing_table[network]
+                updated = True
+            
+            if updated:
+                print("\nRouting Table Updated after neighbor failure:")
+                print(json.dumps(self.routing_table, indent=4))
 
     def update_routing_table(self, sender_address, sender_table):
         with self.lock:
@@ -263,8 +239,13 @@ class Router:
                 return
 
             for network, info in sender_table.items():
+                if info["cost"] >= self.INFINITY:
+                    continue
+
                 new_cost = cost_to_sender + info["cost"]
 
+                if new_cost >= self.INFINITY:
+                    new_cost = self.INFINITY
                 current_entry = self.routing_table.get(network)
 
                 if current_entry is None:

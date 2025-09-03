@@ -1,0 +1,284 @@
+--- Iniciando Roteador ---
+Endereço: 10.97.194.149:5000
+Rede Local: 10.97.192.0/21
+Vizinhos Diretos: {'10.97.193.66:5000': 35, '150.165.98.248:5000': 15}
+Intervalo de Atualização: 10s
+--------------------------
+Tabela de roteamento inicial:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+ * Serving Flask app 'roteador'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.97.194.149:5000
+Press CTRL+C to quit
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "150.165.98.0/24": {
+        "cost": 35,
+        "next_hop": "150.165.98.132:5000"
+    }
+}
+
+Routing Table Updated:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "150.165.98.0/24": {
+        "cost": 70,
+        "next_hop": "10.97.193.66:5000"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:03:21] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.32.0/21": {
+        "cost": 10,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+
+Routing Table Updated:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "150.165.98.0/24": {
+        "cost": 15,
+        "next_hop": "150.165.98.248:5000"
+    },
+    "10.97.32.0/21": {
+        "cost": 25,
+        "next_hop": "150.165.98.248:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:03:21] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:03:22 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "10.97.0.0/16": {
+        "cost": 185,
+        "next_hop": "150.165.98.132:5000"
+    }
+}
+
+Routing Table Updated:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "150.165.98.0/24": {
+        "cost": 15,
+        "next_hop": "150.165.98.248:5000"
+    },
+    "10.97.32.0/21": {
+        "cost": 25,
+        "next_hop": "150.165.98.248:5000"
+    },
+    "10.97.0.0/16": {
+        "cost": 220,
+        "next_hop": "10.97.193.66:5000"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:03:31] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.32.0/21": {
+        "cost": 10,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:03:31] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:03:32 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "10.97.0.0/16": {
+        "cost": 185,
+        "next_hop": "150.165.98.132:5000"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:03:41] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+
+Routing Table Updated:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    },
+    "150.165.98.0/24": {
+        "cost": 15,
+        "next_hop": "150.165.98.248:5000"
+    },
+    "10.97.32.0/21": {
+        "cost": 25,
+        "next_hop": "150.165.98.248:5000"
+    },
+    "10.97.0.0/16": {
+        "cost": 45,
+        "next_hop": "150.165.98.248:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:03:41] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:03:42 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:03:51] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:03:52] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:03:52 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:04:01] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:04:02] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:04:02 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:04:11] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:04:12] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:04:13 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:04:21] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:04:22] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:04:23 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
+Recebida atualização de 10.97.193.66:5000:
+{
+    "10.97.192.0/21": {
+        "cost": 0,
+        "next_hop": "10.97.192.0/21"
+    }
+}
+10.97.193.66 - - [03/Sep/2025 16:04:31] "POST /receive_update HTTP/1.1" 200 -
+Recebida atualização de 150.165.98.248:5000:
+{
+    "150.165.98.0/24": {
+        "cost": 0,
+        "next_hop": "150.165.98.0/24"
+    },
+    "10.97.0.0/16": {
+        "cost": 30,
+        "next_hop": "10.97.32.25:5000"
+    }
+}
+10.97.199.202 - - [03/Sep/2025 16:04:32] "POST /receive_update HTTP/1.1" 200 -
+[Wed Sep  3 16:04:33 2025] Enviando atualizações periódicas para os vizinhos...
+Enviando tabela para 10.97.193.66:5000
+Enviando tabela para 150.165.98.248:5000
